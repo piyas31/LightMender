@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Poor Lighting Fixer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-10">
+  <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-5xl">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Poor Lighting Fixer</h1>
+
+    <!-- Upload Form -->
+    <form method="POST" enctype="multipart/form-data" class="flex flex-col items-center gap-4 max-w-md mx-auto">
+      <input 
+        type="file" 
+        name="photo" 
+        accept="image/*" 
+        required
+        class="block w-full text-sm text-gray-500
+               file:mr-4 file:py-2 file:px-4
+               file:rounded-full file:border-0
+               file:text-sm file:font-semibold
+               file:bg-blue-50 file:text-blue-700
+               hover:file:bg-blue-100"
+      />
+      <button 
+        type="submit" 
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md w-full sm:w-auto"
+      >
+        Upload & Enhance
+      </button>
+    </form>
+
+    {% if uploaded_image and processed_image %}
+    <!-- Images + Close Button Container -->
+    <div class="relative mt-8 max-w-full">
+      <!-- Close Button -->
+      <button id="close-btn" 
+        class="absolute top-2 right-2 z-20 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-red-400"
+        title="Close and upload new photo"
+      >
+        ✕ Close
+      </button>
+
+      <!-- Images Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="text-center">
+          <h2 class="font-semibold text-gray-700 mb-2">Original</h2>
+          <img 
+            src="{{ uploaded_image }}" 
+            id="original-img" 
+            alt="Original Image"
+            class="rounded-lg shadow-md max-h-80 w-full object-contain mx-auto"
+          />
+        </div>
+        <div class="text-center">
+          <h2 class="font-semibold text-gray-700 mb-2">Enhanced</h2>
+          <img 
+            src="{{ processed_image }}" 
+            id="processed-img" 
+            alt="Enhanced Image"
+            class="rounded-lg shadow-md max-h-80 w-full object-contain mx-auto"
+          />
+          <a 
+            href="{{ url_for('download_file', filename=download_filename) }}" 
+            download
+            class="mt-4 inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow w-full sm:w-auto text-center"
+          >
+            Download
+          </a>
+        </div>
+      </div>
+
+      <!-- Sliders -->
+      <div class="mt-8 bg-gray-50 p-6 rounded-lg shadow-inner max-w-xl mx-auto">
+        <h3 class="font-semibold text-gray-800 mb-4 text-center">Adjust Settings</h3>
+
+        <div class="mb-4">
+          <label for="smooth" class="block mb-1 font-medium">Smoothness: <span id="smooth-val">5</span></label>
+          <input 
+            type="range" 
+            min="0" max="10" 
+            value="5" 
+            id="smooth" 
+            class="w-full"
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="sharp" class="block mb-1 font-medium">Sharpness: <span id="sharp-val">1.5</span></label>
+          <input 
+            type="range" 
+            min="0.5" max="3" step="0.1" 
+            value="1.5" 
+            id="sharp" 
+            class="w-full"
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="brightness" class="block mb-1 font-medium">Brightness: <span id="brightness-val">0</span></label>
+          <input 
+            type="range" 
+            min="-100" max="100" 
+            value="0" 
+            id="brightness" 
+            class="w-full"
+          />
+        </div>
+
+        <div class="mb-0">
+          <label for="contrast" class="block mb-1 font-medium">Contrast: <span id="contrast-val">1.0</span></label>
+          <input 
+            type="range" 
+            min="0.5" max="3" step="0.1" 
+            value="1.0" 
+            id="contrast" 
+            class="w-full"
+          />
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+{% if uploaded_image %}
+<script>
+const filename = "{{ filename }}";
+const processedImg = document.getElementById("processed-img");
+
+function updateLabel(id, value) {
+  document.getElementById(id + "-val").innerText = value;
+}
+
+let debounceTimeout;
+
+async function updateImage() {
+  clearTimeout(debounceTimeout);
+  debounceTimeout = setTimeout(async () => {
+    const smooth = document.getElementById("smooth").value;
+    const sharp = document.getElementById("sharp").value;
+    const brightness = document.getElementById("brightness").value;
+    const contrast = document.getElementById("contrast").value;
+
+    updateLabel("smooth", smooth);
+    updateLabel("sharp", sharp);
+    updateLabel("brightness", brightness);
+    updateLabel("contrast", contrast);
+
+    const res = await fetch("/process", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename, smooth, sharp, brightness, contrast })
+    });
+
+    const data = await res.json();
+
+    processedImg.src = data.processed_image + "?t=" + new Date().getTime();
+  }, 300);
+}
+
+["smooth", "sharp", "brightness", "contrast"].forEach(id => {
+  document.getElementById(id).addEventListener("input", updateImage);
+});
+
+document.getElementById("close-btn").addEventListener("click", () => {
+  window.location.href = "/";
+});
+</script>
+{% endif %}
+
+</body>
+</html>
