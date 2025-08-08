@@ -25,7 +25,7 @@ LightMender is a Python Flask web application that enhances low-light photos usi
 
 ## Installation & Running Locally
 
-1. Clone the repository: `git clone https://github.com/yourusername/lightmender.git` and `cd lightmender`
+1. Clone the repository: `git clone https://github.com/piyas31/lightmender.git` and `cd lightmender`
 
 2. Create and activate a virtual environment:
 
